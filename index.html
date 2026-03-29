@@ -3,139 +3,178 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Ostuni Smart Transit - Official</title>
+    <meta name="theme-color" content="#f8f9fa">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="description" content="Ostuni Smart Transit: Orari e mappe in tempo reale dei bus urbani STP Brindisi.">
     
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <title>Ostuni Smart Transit Pro</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
         :root {
             --l1-color: #0A58CA; --l2-color: #DC3545;
-            --surface: rgba(255, 255, 255, 0.95); --bg: #f8f9fa;
+            --surface: rgba(255, 255, 255, 0.96); --bg: #f8f9fa;
             --text-main: #1A1D20; --text-sub: #6C757D;
             --safe-top: env(safe-area-inset-top, 20px);
             --safe-bot: env(safe-area-inset-bottom, 20px);
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Plus Jakarta Sans', sans-serif; }
-        body { margin: 0; padding: 0; height: 100dvh; overflow: hidden; background: var(--bg); color: var(--text-main); }
+        /* RESET & MOBILE LOCK */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
+        html, body { 
+            margin: 0; padding: 0; width: 100vw; height: 100dvh; 
+            overflow: hidden; background: var(--bg); color: var(--text-main); 
+            overscroll-behavior-y: none;
+        }
 
         #map { position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1; }
+
+        /* TOAST NOTIFICATIONS */
+        .toast {
+            position: absolute; top: calc(var(--safe-top) + 60px); left: 50%; transform: translateX(-50%) translateY(-20px);
+            background: rgba(33, 37, 41, 0.95); color: white; padding: 10px 20px; border-radius: 30px;
+            font-size: 13px; font-weight: 600; z-index: 9999; opacity: 0; pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            white-space: nowrap;
+        }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
         /* HEADER */
         header {
             position: absolute; top: 0; left: 0; right: 0;
-            padding: calc(var(--safe-top) + 10px) 20px 15px;
-            background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.6) 100%);
-            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-            display: flex; justify-content: space-between; align-items: center; z-index: 1000;
+            padding: calc(var(--safe-top) + 12px) 20px 15px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0) 100%);
+            display: flex; justify-content: space-between; align-items: flex-start; z-index: 1000; pointer-events: none;
         }
-        .app-title { font-weight: 800; font-size: 20px; letter-spacing: -0.5px; display:flex; align-items:center; gap:8px;}
-        .app-title span { color: var(--l1-color); }
-        .day-badge { background: #E8F5E9; color: #198754; font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 20px; border: 1px solid #c3e6cb;}
+        .app-title { font-weight: 800; font-size: 22px; letter-spacing: -0.5px; text-shadow: 0 2px 10px rgba(255,255,255,0.8); pointer-events: auto; }
+        .app-title span { color: var(--l1-color); transition: color 0.3s; }
+        .badge-container { display: flex; flex-direction: column; gap: 5px; align-items: flex-end; pointer-events: auto; }
+        
+        .day-badge { background: #E8F5E9; color: #198754; font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 20px; border: 1px solid #c3e6cb; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .day-badge.sabato { background: #e2e3e5; color: #383d41; border-color: #d6d8db; }
         .day-badge.festivo { background: #fff3cd; color: #856404; border-color: #ffeeba; }
 
         .fab-gps {
-            position: absolute; right: 15px; bottom: calc(410px + var(--safe-bot));
+            position: absolute; right: 15px; bottom: calc(440px + var(--safe-bot));
             width: 48px; height: 48px; border-radius: 50%; background: white; border: none;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15); font-size: 20px; z-index: 1000; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15); font-size: 20px; z-index: 1000; cursor: pointer; transition: 0.2s;
+            display: flex; align-items: center; justify-content: center;
         }
+        .fab-gps:active { transform: scale(0.9); background: #f0f0f0; }
 
         /* BOTTOM SHEET */
         .bottom-sheet {
             position: absolute; bottom: 0; left: 0; right: 0;
             background: var(--surface); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             border-top-left-radius: 28px; border-top-right-radius: 28px;
-            padding: 20px 15px calc(20px + var(--safe-bot)); z-index: 2000; box-shadow: 0 -10px 40px rgba(0,0,0,0.1);
+            padding: 20px 15px calc(15px + var(--safe-bot)); z-index: 2000; 
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.12);
             display: flex; flex-direction: column; gap: 12px;
+            touch-action: pan-y;
         }
 
+        /* CONTROLLI */
         .segmented-control { display: flex; background: rgba(0,0,0,0.05); border-radius: 12px; padding: 4px; }
-        .seg-btn { flex: 1; padding: 8px; border: none; border-radius: 8px; background: transparent; font-size: 12px; font-weight: 700; color: var(--text-sub); transition: 0.2s; cursor: pointer; }
-        .seg-btn.active-l1 { background: white; color: var(--l1-color); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .seg-btn.active-l2 { background: white; color: var(--l2-color); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .seg-btn.active-dir { background: white; color: var(--text-main); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .seg-btn { flex: 1; padding: 8px; border: none; border-radius: 8px; background: transparent; font-size: 13px; font-weight: 700; color: var(--text-sub); transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
+        .seg-btn.active-l1 { background: white; color: var(--l1-color); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .seg-btn.active-l2 { background: white; color: var(--l2-color); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .seg-btn.active-dir { background: white; color: var(--text-main); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
 
         /* SELETTORE FERMATE */
-        .stop-selector { display: flex; gap: 8px; overflow-x: auto; padding: 5px 0 10px 0; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+        .stop-selector { 
+            display: flex; gap: 8px; overflow-x: auto; padding: 5px 0 10px 0; 
+            scrollbar-width: none; -webkit-overflow-scrolling: touch; touch-action: pan-x; overscroll-behavior-x: contain; 
+        }
         .stop-selector::-webkit-scrollbar { display: none; }
-        .stop-chip { background: white; border: 2px solid #dee2e6; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; color: var(--text-sub); white-space: nowrap; cursor: pointer; transition: 0.2s; }
+        .stop-chip { background: white; border: 2px solid #e9ecef; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; color: var(--text-sub); white-space: nowrap; cursor: pointer; transition: 0.2s; }
         .stop-chip.active { border-color: var(--l1-color); background: #eef4ff; color: var(--l1-color); }
         .stop-chip.active-l2 { border-color: var(--l2-color); background: #fff0f1; color: var(--l2-color); }
 
         /* DASHBOARD */
-        .dashboard { display: flex; align-items: center; gap: 15px; background: white; padding: 15px; border-radius: 16px; border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 4px 15px rgba(0,0,0,0.02); }
-        .timer-box { background: var(--text-main); color: white; min-width: 80px; height: 80px; border-radius: 18px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .timer-box .val { font-size: 32px; font-weight: 800; line-height: 1; }
-        .timer-box .lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; opacity: 0.8; }
+        .dashboard { display: flex; align-items: center; gap: 15px; background: white; padding: 15px; border-radius: 16px; border: 1px solid #e9ecef; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
+        .timer-box { background: var(--text-main); color: white; min-width: 85px; height: 85px; border-radius: 18px; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: background 0.3s;}
+        .timer-box .val { font-size: 34px; font-weight: 800; line-height: 1; margin-bottom: 2px;}
+        .timer-box .lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; opacity: 0.9; letter-spacing: 0.5px;}
         .status-info { flex: 1; }
         .status-title { font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-sub); margin-bottom: 2px; }
-        .status-text { font-size: 18px; font-weight: 800; color: var(--text-main); margin-bottom: 2px; }
-        .status-stop { font-size: 12px; font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap:4px; }
+        .status-stop { font-size: 13px; font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap:4px; line-height: 1.2; transition: color 0.3s;}
+        .status-text { font-size: 20px; font-weight: 800; color: var(--text-main); margin-bottom: 2px; display: flex; align-items: center; gap: 8px;}
+        .live-dot { width: 8px; height: 8px; border-radius: 50%; animation: pulse 1.5s infinite; transition: background 0.3s;}
 
         /* TIMELINE ORARI */
-        .schedule-scroller { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+        .schedule-scroller { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; -webkit-overflow-scrolling: touch; touch-action: pan-x; overscroll-behavior-x: contain; }
         .schedule-scroller::-webkit-scrollbar { display: none; }
-        .time-chip { background: white; border: 1px solid #dee2e6; padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 700; color: var(--text-main); white-space: nowrap; }
+        .time-chip { background: white; border: 1px solid #e9ecef; padding: 8px 14px; border-radius: 10px; font-size: 14px; font-weight: 700; color: var(--text-main); white-space: nowrap; transition: 0.2s;}
         .time-chip.past { opacity: 0.4; text-decoration: line-through; background: transparent; border-color: transparent; }
         .time-chip.next { background: var(--text-main); color: white; border-color: var(--text-main); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
 
-        .btn-buy { display: block; width: 100%; padding: 15px; border-radius: 14px; background: var(--l1-color); color: white; text-align: center; text-decoration: none; font-weight: 800; font-size: 14px; margin-top: 5px; }
+        .btn-buy { display: block; width: 100%; padding: 16px; border-radius: 14px; background: var(--l1-color); color: white; text-align: center; text-decoration: none; font-weight: 800; font-size: 15px; margin-top: 5px; transition: 0.2s; }
+        .btn-buy:active { transform: scale(0.98); }
 
-        /* MAPPA */
+        /* MARKER MAPPA & ANIMAZIONI */
         .stop-marker { background: white; border: 3px solid #666; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.3); transition: 0.3s; }
         .stop-marker-active { border: 4px solid var(--l1-color); transform: scale(1.4); z-index: 800 !important; background: white; border-radius: 50%; box-shadow: 0 0 0 5px rgba(10, 88, 202, 0.2); }
         .stop-marker-active-l2 { border: 4px solid var(--l2-color); transform: scale(1.4); z-index: 800 !important; background: white; border-radius: 50%; box-shadow: 0 0 0 5px rgba(220, 53, 69, 0.2); }
-        .bus-live-marker { background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 2px solid var(--text-main); transition: transform 0.3s; z-index: 1000 !important; }
+        .bus-live-marker { background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 2px solid var(--text-main); transition: transform 0.3s, border-color 0.3s; z-index: 1000 !important; }
         
+        .user-loc-marker { background: #0dcaf0; border: 3px solid white; border-radius: 50%; box-shadow: 0 0 0 0 rgba(13, 202, 240, 0.7); animation: radar 2s infinite; z-index: 900 !important;}
+
         .flow-line { animation: flow-dash 30s linear infinite; }
         .flow-line-reverse { animation: flow-dash-reverse 30s linear infinite; }
         @keyframes flow-dash { to { stroke-dashoffset: -1000; } }
         @keyframes flow-dash-reverse { to { stroke-dashoffset: 1000; } }
+        @keyframes pulse { 0% { opacity: 1; transform: scale(0.9); } 50% { opacity: 0.5; transform: scale(1.1); } 100% { opacity: 1; transform: scale(0.9); } }
+        @keyframes radar { 70% { box-shadow: 0 0 0 15px rgba(13, 202, 240, 0); } 100% { box-shadow: 0 0 0 0 rgba(13, 202, 240, 0); } }
     </style>
 </head>
 <body>
 
+<div id="toast" class="toast">Notifica</div>
+
 <header>
-    <div class="app-title">Ostuni<span>Transit</span> <div id="day-badge" class="day-badge">Feriale</div></div>
+    <div class="app-title">Ostuni<span>Transit</span></div>
+    <div class="badge-container">
+        <div id="day-badge" class="day-badge">Feriale</div>
+    </div>
 </header>
 
-<div id="map"></div>
-<button class="fab-gps" onclick="locateUser()">🎯</button>
+<div id="map" aria-label="Mappa dei percorsi autobus"></div>
+<button class="fab-gps" onclick="appState.locateUser()" aria-label="Trova la mia posizione">🎯</button>
 
-<div class="bottom-sheet" id="ui-panel">
-    <div class="segmented-control">
-        <button id="tab-l1" class="seg-btn active-l1" onclick="appState.setLine('L1')">Linea 1 (Urbana)</button>
-        <button id="tab-l2" class="seg-btn" onclick="appState.setLine('L2')">Linea Specchia</button>
-    </div>
-    <div class="segmented-control" style="background: rgba(0,0,0,0.03);">
-        <button id="dir-out" class="seg-btn active-dir" onclick="appState.setDir('out')">Verso Stazione</button>
-        <button id="dir-in" class="seg-btn" onclick="appState.setDir('in')">Verso Centro</button>
-    </div>
+<main class="bottom-sheet" id="ui-panel">
+    <nav class="segmented-control" aria-label="Selezione Linea">
+        <button id="tab-l1" class="seg-btn active-l1" onclick="appState.setLine('L1')" aria-pressed="true">Linea 1 (Urbana)</button>
+        <button id="tab-l2" class="seg-btn" onclick="appState.setLine('L2')" aria-pressed="false">Linea Specchia</button>
+    </nav>
+    <nav class="segmented-control" style="background: rgba(0,0,0,0.03);" aria-label="Selezione Direzione">
+        <button id="dir-out" class="seg-btn active-dir" onclick="appState.setDir('out')" aria-pressed="true">Verso Stazione</button>
+        <button id="dir-in" class="seg-btn" onclick="appState.setDir('in')" aria-pressed="false">Verso Centro</button>
+    </nav>
 
-    <div class="stop-selector" id="stop-list"></div>
+    <div class="stop-selector" id="stop-list" role="tablist" aria-label="Seleziona Fermata"></div>
 
-    <div class="dashboard">
+    <section class="dashboard" aria-live="polite">
         <div class="timer-box" id="timer-box">
             <span class="val" id="time-val">--</span>
-            <span class="lbl">MIN</span>
+            <span class="lbl">MINUTI</span>
         </div>
         <div class="status-info">
-            <div class="status-title">Orario Calcolato per:</div>
+            <div class="status-title">Prossimo passaggio a:</div>
             <div class="status-stop" id="lbl-stop">📍 Seleziona fermata</div>
-            <div class="status-text" id="next-time">--:--</div>
+            <div class="status-text"><div class="live-dot" id="bus-dot"></div><span id="next-time">--:--</span></div>
         </div>
-    </div>
+    </section>
 
-    <div class="schedule-scroller" id="full-schedule"></div>
+    <div class="schedule-scroller" id="full-schedule" aria-label="Orari completi della giornata"></div>
 
-    <a href="https://www.mooneygo.it/" class="btn-buy" id="btn-pay">🎟️ Acquista Ticket su MooneyGo</a>
-</div>
+    <a href="https://www.mooneygo.it/" class="btn-buy" id="btn-pay" target="_blank" rel="noopener noreferrer">🎟️ Acquista Ticket (MooneyGo)</a>
+</main>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
-    // --- DATABASE 100% UFFICIALE (Estratto dai 9 PDF Forniti) ---
-    // Gestisce orari differenziati Feriali (wk) e Festivi (hol) e calcola il "dopo mezzanotte"
     const SCHEDULE_DB = {
         L1: {
             color: '#0A58CA',
@@ -145,25 +184,28 @@
                 label: "Verso Stazione / Mare",
                 departures: {
                     wk:["04:02", "05:12", "06:20", "06:42", "07:33", "08:23", "08:43", "09:40", "09:42", "10:12", "10:52", "11:12", "11:42", "12:20", "12:42", "13:13", "13:42", "14:13", "14:42", "15:12", "16:12", "16:42", "17:12", "17:42", "18:12", "18:42", "19:20", "19:42", "20:12", "21:12", "22:12", "23:27"],
-                    hol:["06:12", "08:43", "09:42", "10:52", "12:42", "13:42", "16:12", "16:42", "18:27", "20:12", "22:12"]
+                    sat:["05:18", "06:48", "07:39", "08:30", "09:00", "09:40", "10:20", "11:00", "11:40", "12:20", "13:00", "13:50", "14:30", "15:00", "15:40", "16:20", "17:00", "17:40", "18:20", "19:00", "19:48", "21:18", "23:33"],
+                    hol:["06:18", "08:50", "09:00", "09:40", "09:48", "10:20", "10:58", "11:00", "11:40", "12:20", "12:48", "13:00", "13:40", "13:48", "14:45", "15:40", "16:20", "16:48", "17:00", "17:40", "18:20", "18:33", "19:00", "20:18", "22:18"]
                 },
                 stops:[
-                    { name: "Piazza Italia", coords:[40.7307, 17.5778], offsetMin: 0 },
-                    { name: "Viale Pola", coords:[40.7375, 17.5802], offsetMin: 2 },
+                    { name: "Piazza Italia / Centro", coords:[40.7307, 17.5778], offsetMin: 0 },
+                    { name: "Viale Pola", coords:[40.7375, 17.5802], offsetMin: 3 },
                     { name: "Stazione FS", coords:[40.7516, 17.5913], offsetMin: 13 },
                     { name: "Villanova Mare", coords:[40.7905, 17.5966], offsetMin: 20 }
                 ]
             },
             in: {
-                label: "Verso Centro Città",
+                label: "Verso Centro Storico",
                 departures: {
-                    wk:["04:30", "05:30", "06:45", "07:33", "07:55", "08:40", "09:00", "09:30", "10:00", "10:30", "10:43", "11:35", "12:00", "12:40", "13:00", "13:30", "14:00", "14:30", "15:30", "16:00", "16:30", "17:00", "17:30", "18:00", "18:30", "19:00", "19:33", "20:30", "21:30", "22:45", "24:10"], // 24:10 = 00:10 PDF
-                    hol:["06:30", "09:30", "10:43", "13:00", "14:33", "16:00", "17:33", "19:33", "20:30", "22:45"]
+                    wk:["04:30", "05:30", "06:45", "07:33", "07:55", "08:40", "09:00", "09:20", "09:30", "10:00", "10:30", "10:40", "10:43", "11:35", "12:00", "12:40", "13:00", "13:30", "14:00", "14:10", "14:33", "14:45", "15:00", "15:20", "15:30", "16:00", "16:30", "16:40", "17:20", "17:30", "17:33", "18:00", "18:30", "18:40", "19:00", "19:20", "19:33", "20:30", "21:30", "22:45", "00:10"],
+                    sat:["05:30", "07:33", "07:50", "08:50", "09:20", "09:30", "10:00", "10:40", "10:43", "11:20", "11:35", "12:00", "12:40", "12:45", "13:30", "14:10", "14:33", "14:45", "15:20", "16:00", "16:40", "17:20", "17:33", "18:00", "18:40", "18:58", "19:20", "20:30", "21:30", "00:10"],
+                    hol:["06:30", "09:20", "09:30", "10:00", "10:40", "10:43", "11:20", "12:00", "12:40", "13:00", "13:20", "14:00", "14:33", "15:20", "16:00", "16:40", "17:20", "17:30", "17:33", "18:00", "18:40", "19:20", "19:33", "20:30", "22:45"]
                 },
-                stops: [
-                    { name: "Stazione FS", coords:[40.7516, 17.5913], offsetMin: 0 },
-                    { name: "Viale Pola", coords:[40.7375, 17.5802], offsetMin: 13 },
-                    { name: "Piazza Italia", coords:[40.7307, 17.5778], offsetMin: 14 }
+                stops:[
+                    { name: "Villanova Mare", coords:[40.7905, 17.5966], offsetMin: 0 },
+                    { name: "Stazione FS", coords:[40.7516, 17.5913], offsetMin: 7 },
+                    { name: "Viale Pola", coords:[40.7375, 17.5802], offsetMin: 17 },
+                    { name: "Piazza Italia", coords:[40.7307, 17.5778], offsetMin: 20 }
                 ]
             }
         },
@@ -174,8 +216,9 @@
             out: {
                 label: "Verso Stazione FS",
                 departures: {
-                    wk:["04:08", "05:18", "06:27", "06:48", "07:39", "08:30", "08:50", "09:00", "09:40", "09:47", "09:48", "10:18", "10:20", "10:58", "11:00", "11:18", "11:40", "11:48", "12:20", "12:27", "12:48", "13:00", "13:20", "13:48", "13:50", "14:20", "14:30", "14:48", "15:00", "15:18", "15:40", "16:18", "16:20", "16:48", "17:00", "17:18", "17:40", "17:48", "18:18", "18:20", "18:48", "19:00", "19:27", "19:48", "20:18", "21:18", "22:18", "23:33"],
-                    hol:["06:18", "08:50", "09:00", "09:40", "09:48", "10:20", "10:58", "11:00", "11:40", "12:20", "12:48", "13:00", "13:40", "13:48", "14:45", "15:40", "16:20", "16:48", "17:00", "17:40", "18:20", "18:33", "19:00", "20:18", "22:18"]
+                    wk:["06:55", "07:25", "08:15", "09:15", "10:15", "11:15", "12:15", "13:20", "14:20", "16:20", "17:30", "18:50", "19:50"],
+                    sat:["06:55", "07:25", "08:15", "09:15", "10:15", "11:15", "12:15", "13:20", "14:20", "16:20", "17:30", "18:50", "19:50"],
+                    hol:["06:55", "07:25", "08:15", "09:15", "10:15", "11:15", "12:15", "13:20", "14:20", "16:20", "17:30", "18:50", "19:50"]
                 },
                 stops:[
                     { name: "Via T. Specchia", coords:[40.7350, 17.5710], offsetMin: 0 },
@@ -186,8 +229,9 @@
             in: {
                 label: "Verso Via Specchia",
                 departures: {
-                    wk:["04:30", "05:30", "06:45", "07:33", "07:55", "08:40", "09:00", "09:20", "09:30", "10:00", "10:30", "10:40", "10:43", "11:35", "12:00", "12:40", "13:00", "13:30", "14:00", "14:10", "14:33", "14:45", "15:00", "15:20", "15:30", "16:00", "16:30", "16:40", "17:20", "17:30", "17:33", "18:00", "18:30", "18:40", "19:00", "19:20", "19:33", "20:30", "21:30", "22:45", "24:10"],
-                    hol:["06:30", "09:20", "09:30", "10:00", "10:40", "10:43", "11:20", "12:00", "12:40", "13:00", "13:20", "14:00", "14:33", "15:20", "16:00", "16:40", "17:20", "17:30", "17:33", "18:00", "18:40", "19:20", "19:33", "20:30", "22:45"]
+                    wk:["07:10", "07:55", "08:50", "09:50", "10:50", "11:50", "12:50", "13:55", "15:00", "16:45", "18:10", "19:15", "20:15"],
+                    sat:["07:10", "07:55", "08:50", "09:50", "10:50", "11:50", "12:50", "13:55", "15:00", "16:45", "18:10", "19:15", "20:15"],
+                    hol:["07:10", "07:55", "08:50", "09:50", "10:50", "11:50", "12:50", "13:55", "15:00", "16:45", "18:10", "19:15", "20:15"]
                 },
                 stops:[
                     { name: "Stazione FS", coords:[40.7516, 17.5913], offsetMin: 0 },
@@ -199,52 +243,64 @@
     };
 
     const appState = {
-        line: 'L1', dir: 'out', stopIdx: 0, map: null, isHoliday: false,
-        layers: { routes:[], stops:[], bus: null },
+        line: 'L1', dir: 'out', stopIdx: 0, map: null, dayType: 'wk', lastNextIndex: -1,
+        layers: { routes:[], stops:[], bus: null, user: null },
 
-        // Setup Iniziale e Controllo Calendario
         init() {
-            // Controlla se oggi è Domenica
-            this.isHoliday = [0].includes(new Date().getDay());
+            const day = new Date().getDay();
+            if (day === 0) this.dayType = 'hol'; 
+            else if (day === 6) this.dayType = 'sat'; 
+            else this.dayType = 'wk'; 
             
             const badge = document.getElementById('day-badge');
-            if (this.isHoliday) {
-                badge.innerText = "Orario Festivo";
-                badge.className = "day-badge festivo";
-            } else {
-                badge.innerText = "Orario Feriale";
-                badge.className = "day-badge";
-            }
+            if (this.dayType === 'hol') { badge.innerText = "Orario Festivo"; badge.className = "day-badge festivo"; } 
+            else if (this.dayType === 'sat') { badge.innerText = "Orario Sabato"; badge.className = "day-badge sabato"; }
+            else { badge.innerText = "Orario Feriale"; badge.className = "day-badge"; }
 
             this.initMap();
             this.updateUI();
-            setInterval(() => this.processData(), 15000); // Ricalcola ogni 15 sec
+            
+            // Loop principale (calcoli snelli ogni 5s, DOM rendering limitato)
+            setInterval(() => this.processData(), 5000); 
         },
 
-        setLine(l) { this.line = l; this.stopIdx = 0; this.updateUI(); this.drawMap(); },
-        setDir(d) { this.dir = d; this.stopIdx = 0; this.updateUI(); this.drawMap(); },
-        setStop(idx) { this.stopIdx = idx; this.renderStopSelector(); this.highlightMapStop(); this.processData(); },
+        showToast(msg, duration = 3000) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), duration);
+        },
 
-        // Parser Avanzato Orari (gestisce i formati oltre mezzanotte es. 24:10)
+        setLine(l) { this.line = l; this.stopIdx = 0; this.lastNextIndex = -1; this.updateUI(); this.drawMap(); },
+        setDir(d) { this.dir = d; this.stopIdx = 0; this.lastNextIndex = -1; this.updateUI(); this.drawMap(); },
+        setStop(idx) { this.stopIdx = idx; this.lastNextIndex = -1; this.renderStopSelector(); this.highlightMapStop(); this.processData(); },
+
         parseTimeStrToMins(timeStr) {
             let[h, m] = timeStr.split(':').map(Number);
+            if (h === 0 && m < 59) h = 24; // Handle after-midnight
             return (h * 60) + m;
         },
-
         formatMinsToStr(mins) {
             let h = Math.floor(mins / 60);
             let m = mins % 60;
-            // Se supera le 24 mostra 00:xx
-            let displayH = h >= 24 ? h - 24 : h;
+            let displayH = h >= 24 ? h - 24 : h; 
             return `${String(displayH).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
         },
 
         updateUI() {
             const c = SCHEDULE_DB[this.line].color;
-            document.getElementById('tab-l1').className = `seg-btn ${this.line === 'L1' ? 'active-l1' : ''}`;
-            document.getElementById('tab-l2').className = `seg-btn ${this.line === 'L2' ? 'active-l2' : ''}`;
-            document.getElementById('dir-out').className = `seg-btn ${this.dir === 'out' ? 'active-dir' : ''}`;
-            document.getElementById('dir-in').className = `seg-btn ${this.dir === 'in' ? 'active-dir' : ''}`;
+            
+            ['L1', 'L2'].forEach(l => {
+                const btn = document.getElementById(`tab-${l.toLowerCase()}`);
+                btn.className = `seg-btn ${this.line === l ? `active-${l.toLowerCase()}` : ''}`;
+                btn.setAttribute('aria-pressed', this.line === l);
+            });
+            
+            ['out', 'in'].forEach(d => {
+                const btn = document.getElementById(`dir-${d}`);
+                btn.className = `seg-btn ${this.dir === d ? 'active-dir' : ''}`;
+                btn.setAttribute('aria-pressed', this.dir === d);
+            });
             
             document.getElementById('dir-out').innerText = SCHEDULE_DB[this.line].out.label;
             document.getElementById('dir-in').innerText = SCHEDULE_DB[this.line].in.label;
@@ -253,6 +309,7 @@
             document.getElementById('btn-pay').style.background = c;
             document.getElementById('timer-box').style.background = c;
             document.getElementById('lbl-stop').style.color = c;
+            document.getElementById('bus-dot').style.background = c;
             
             this.renderStopSelector();
             this.processData();
@@ -265,10 +322,12 @@
             const activeClass = this.line === 'L1' ? 'active' : 'active-l2';
 
             stops.forEach((stop, idx) => {
-                let btn = document.createElement('div');
+                let btn = document.createElement('button');
                 btn.className = `stop-chip ${idx === this.stopIdx ? activeClass : ''}`;
                 btn.innerText = stop.name;
                 btn.onclick = () => this.setStop(idx);
+                btn.setAttribute('role', 'tab');
+                btn.setAttribute('aria-selected', idx === this.stopIdx);
                 container.appendChild(btn);
             });
 
@@ -276,50 +335,52 @@
             setTimeout(() => {
                 const activeEl = container.querySelector('.stop-chip[class*="active"]');
                 if(activeEl) container.scrollTo({ left: activeEl.offsetLeft - 20, behavior: 'smooth' });
-            }, 100);
+            }, 50);
         },
 
         processData() {
             const now = new Date();
             let currentMins = now.getHours() * 60 + now.getMinutes();
-            // Trucco "Top Dev" per orari notturni: Se sono le 00:05, calcolalo come 24:05 per non rompere la timeline
-            if (now.getHours() < 3) currentMins += (24 * 60); 
+            if (now.getHours() < 4) currentMins += (24 * 60); 
             
             const currentDirData = SCHEDULE_DB[this.line][this.dir];
-            // Prende l'array di partenze giusto in base al giorno!
-            const baseDepartures = this.isHoliday ? currentDirData.departures.hol : currentDirData.departures.wk;
+            // Fallback robusto se manca array festivo/sabato usa feriale (wk)
+            const baseDepartures = currentDirData.departures[this.dayType] || currentDirData.departures['wk'];
             const stopOffset = currentDirData.stops[this.stopIdx].offsetMin;
             
-            // 1. Calcola il Palinsesto Locale in minuti reali
-            const localScheduleMins = baseDepartures.map(timeStr => this.parseTimeStrToMins(timeStr) + stopOffset);
-            const baseScheduleMins = baseDepartures.map(timeStr => this.parseTimeStrToMins(timeStr));
+            const localScheduleMins = baseDepartures.map(str => this.parseTimeStrToMins(str) + stopOffset);
+            const baseScheduleMins = baseDepartures.map(str => this.parseTimeStrToMins(str));
             
             let nextIndex = -1;
             let activeBusIndex = -1;
 
-            // 2. Trova il prossimo bus alla FERMATA SELEZIONATA
             for(let i=0; i<localScheduleMins.length; i++) {
                 if (localScheduleMins[i] >= currentMins) {
                     if (nextIndex === -1) nextIndex = i;
                 }
             }
 
-            // 3. Trova se c'è un bus FISICAMENTE in strada adesso (calcolato dal capolinea)
             for(let i=0; i<baseScheduleMins.length; i++) {
                 if (currentMins >= baseScheduleMins[i] && currentMins < (baseScheduleMins[i] + SCHEDULE_DB[this.line].travelTime)) {
                     activeBusIndex = i; 
                 }
             }
 
-            this.renderTimeline(localScheduleMins, nextIndex);
+            // Ottimizzazione Performance UI: Renderizza e scrolla DOM SOLO se c'è un cambiamento logico
+            if (this.lastNextIndex !== nextIndex) {
+                this.renderTimeline(localScheduleMins, nextIndex);
+                this.lastNextIndex = nextIndex;
+            }
             
-            // Update Text UI
+            // Aggiornamento testuale continuo
             if (nextIndex !== -1) {
                 document.getElementById('time-val').innerText = localScheduleMins[nextIndex] - currentMins;
                 document.getElementById('next-time').innerText = this.formatMinsToStr(localScheduleMins[nextIndex]);
+                document.getElementById('bus-dot').style.display = 'block';
             } else {
                 document.getElementById('time-val').innerText = "--";
-                document.getElementById('next-time').innerText = "Servizio Terminato";
+                document.getElementById('next-time').innerText = "Fine Corsa";
+                document.getElementById('bus-dot').style.display = 'none';
             }
 
             this.moveBusOnMap(baseScheduleMins, currentMins, activeBusIndex, nextIndex);
@@ -339,7 +400,7 @@
             setTimeout(() => {
                 const n = document.getElementById('chip-next');
                 if(n) container.scrollTo({ left: n.offsetLeft - 20, behavior: 'smooth' });
-            }, 300);
+            }, 50);
         },
 
         moveBusOnMap(baseScheduleMins, currentMins, activeBusIndex, nextIndex) {
@@ -385,8 +446,25 @@
         },
 
         initMap() {
-            this.map = L.map('map', { zoomControl: false }).setView([40.7400, 17.5800], 14);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(this.map);
+            // Aggiunta Attribution obbligatoria per produzione
+            this.map = L.map('map', { zoomControl: false, tap: false }).setView([40.7400, 17.5800], 14);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                maxZoom: 19
+            }).addTo(this.map);
+            
+            // Gestione Eventi Localizzazione
+            this.map.on('locationfound', (e) => {
+                if(this.layers.user) this.map.removeLayer(this.layers.user);
+                let userIcon = L.divIcon({ className: 'user-loc-marker', iconSize:[20,20], iconAnchor:[10,10] });
+                this.layers.user = L.marker(e.latlng, {icon: userIcon}).addTo(this.map);
+                this.showToast('Posizione aggiornata', 2000);
+            });
+            
+            this.map.on('locationerror', (e) => {
+                this.showToast('Impossibile accedere al GPS. Controlla i permessi.', 4000);
+            });
+
             this.drawMap();
         },
 
@@ -408,7 +486,7 @@
             this.layers.routes.push(shadow, base, flow);
 
             stops.forEach((stop, idx) => {
-                let icon = L.divIcon({ className: 'stop-marker', iconSize:[12, 12], iconAnchor:[6,6] });
+                let icon = L.divIcon({ className: 'stop-marker', iconSize:[14, 14], iconAnchor:[7,7] });
                 let m = L.marker(stop.coords, { icon: icon }).addTo(this.map);
                 m.on('click', () => { this.setStop(idx); });
                 this.layers.stops.push(m);
@@ -416,8 +494,10 @@
 
             this.highlightMapStop();
 
-            const uiHeight = document.getElementById('ui-panel').offsetHeight;
-            this.map.fitBounds(base.getBounds(), { paddingBottomRight:[20, uiHeight + 30], animate: true });
+            setTimeout(() => {
+                const uiHeight = document.getElementById('ui-panel').offsetHeight;
+                this.map.fitBounds(base.getBounds(), { paddingBottomRight:[20, uiHeight + 30], animate: true });
+            }, 100);
         },
 
         highlightMapStop() {
@@ -430,12 +510,16 @@
                 }
             });
             if(this.layers.stops[this.stopIdx]) {
-                this.map.panTo(this.layers.stops[this.stopIdx].getLatLng(), {animate: true});
+                const uiHeight = document.getElementById('ui-panel').offsetHeight;
+                this.map.panTo(this.layers.stops[this.stopIdx].getLatLng(), {animate: true, paddingBottomRight:[0, uiHeight/1.5]});
             }
+        },
+        
+        locateUser() {
+            this.showToast('Ricerca GPS in corso...', 2000);
+            if (this.map) this.map.locate({ setView: true, maxZoom: 16, enableHighAccuracy: true });
         }
     };
-
-    function locateUser() { if (appState.map) appState.map.locate({ setView: true, maxZoom: 16 }); }
 
     window.onload = () => { appState.init(); };
 </script>
