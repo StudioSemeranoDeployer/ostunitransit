@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Ostuni Smart Transit Ultimate</title>
+    <title>Ostuni Smart Transit - Official</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -22,6 +22,7 @@
 
         #map { position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1; }
 
+        /* HEADER */
         header {
             position: absolute; top: 0; left: 0; right: 0;
             padding: calc(var(--safe-top) + 10px) 20px 15px;
@@ -29,8 +30,10 @@
             backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
             display: flex; justify-content: space-between; align-items: center; z-index: 1000;
         }
-        .app-title { font-weight: 800; font-size: 20px; letter-spacing: -0.5px; }
+        .app-title { font-weight: 800; font-size: 20px; letter-spacing: -0.5px; display:flex; align-items:center; gap:8px;}
         .app-title span { color: var(--l1-color); }
+        .day-badge { background: #E8F5E9; color: #198754; font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 20px; border: 1px solid #c3e6cb;}
+        .day-badge.festivo { background: #fff3cd; color: #856404; border-color: #ffeeba; }
 
         .fab-gps {
             position: absolute; right: 15px; bottom: calc(410px + var(--safe-bot));
@@ -38,7 +41,7 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.15); font-size: 20px; z-index: 1000; cursor: pointer;
         }
 
-        /* BOTTOM SHEET PRINCIPALE */
+        /* BOTTOM SHEET */
         .bottom-sheet {
             position: absolute; bottom: 0; left: 0; right: 0;
             background: var(--surface); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
@@ -47,27 +50,20 @@
             display: flex; flex-direction: column; gap: 12px;
         }
 
-        /* CONTROLLI LINEA E DIREZIONE */
         .segmented-control { display: flex; background: rgba(0,0,0,0.05); border-radius: 12px; padding: 4px; }
         .seg-btn { flex: 1; padding: 8px; border: none; border-radius: 8px; background: transparent; font-size: 12px; font-weight: 700; color: var(--text-sub); transition: 0.2s; cursor: pointer; }
         .seg-btn.active-l1 { background: white; color: var(--l1-color); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .seg-btn.active-l2 { background: white; color: var(--l2-color); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .seg-btn.active-dir { background: white; color: var(--text-main); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
 
-        /* SELETTORE FERMATE (Novità) */
-        .stop-selector {
-            display: flex; gap: 8px; overflow-x: auto; padding: 5px 0 10px 0;
-            scrollbar-width: none; -webkit-overflow-scrolling: touch;
-        }
+        /* SELETTORE FERMATE */
+        .stop-selector { display: flex; gap: 8px; overflow-x: auto; padding: 5px 0 10px 0; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
         .stop-selector::-webkit-scrollbar { display: none; }
-        .stop-chip {
-            background: white; border: 2px solid #dee2e6; padding: 8px 16px; border-radius: 20px;
-            font-size: 13px; font-weight: 700; color: var(--text-sub); white-space: nowrap; cursor: pointer; transition: 0.2s;
-        }
+        .stop-chip { background: white; border: 2px solid #dee2e6; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; color: var(--text-sub); white-space: nowrap; cursor: pointer; transition: 0.2s; }
         .stop-chip.active { border-color: var(--l1-color); background: #eef4ff; color: var(--l1-color); }
         .stop-chip.active-l2 { border-color: var(--l2-color); background: #fff0f1; color: var(--l2-color); }
 
-        /* DASHBOARD INFO */
+        /* DASHBOARD */
         .dashboard { display: flex; align-items: center; gap: 15px; background: white; padding: 15px; border-radius: 16px; border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 4px 15px rgba(0,0,0,0.02); }
         .timer-box { background: var(--text-main); color: white; min-width: 80px; height: 80px; border-radius: 18px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         .timer-box .val { font-size: 32px; font-weight: 800; line-height: 1; }
@@ -75,7 +71,7 @@
         .status-info { flex: 1; }
         .status-title { font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-sub); margin-bottom: 2px; }
         .status-text { font-size: 18px; font-weight: 800; color: var(--text-main); margin-bottom: 2px; }
-        .status-stop { font-size: 12px; font-weight: 600; color: var(--l1-color); margin-bottom: 4px; display: flex; align-items: center; gap:4px; }
+        .status-stop { font-size: 12px; font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap:4px; }
 
         /* TIMELINE ORARI */
         .schedule-scroller { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
@@ -86,14 +82,12 @@
 
         .btn-buy { display: block; width: 100%; padding: 15px; border-radius: 14px; background: var(--l1-color); color: white; text-align: center; text-decoration: none; font-weight: 800; font-size: 14px; margin-top: 5px; }
 
-        /* MARKER MAPPA MIGLIORATI */
+        /* MAPPA */
         .stop-marker { background: white; border: 3px solid #666; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.3); transition: 0.3s; }
         .stop-marker-active { border: 4px solid var(--l1-color); transform: scale(1.4); z-index: 800 !important; background: white; border-radius: 50%; box-shadow: 0 0 0 5px rgba(10, 88, 202, 0.2); }
         .stop-marker-active-l2 { border: 4px solid var(--l2-color); transform: scale(1.4); z-index: 800 !important; background: white; border-radius: 50%; box-shadow: 0 0 0 5px rgba(220, 53, 69, 0.2); }
-        
         .bus-live-marker { background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 2px solid var(--text-main); transition: transform 0.3s; z-index: 1000 !important; }
         
-        /* Animazione Linee */
         .flow-line { animation: flow-dash 30s linear infinite; }
         .flow-line-reverse { animation: flow-dash-reverse 30s linear infinite; }
         @keyframes flow-dash { to { stroke-dashoffset: -1000; } }
@@ -103,28 +97,23 @@
 <body>
 
 <header>
-    <div class="app-title">Ostuni<span>Transit</span></div>
+    <div class="app-title">Ostuni<span>Transit</span> <div id="day-badge" class="day-badge">Feriale</div></div>
 </header>
 
 <div id="map"></div>
 <button class="fab-gps" onclick="locateUser()">🎯</button>
 
 <div class="bottom-sheet" id="ui-panel">
-    
     <div class="segmented-control">
-        <button id="tab-l1" class="seg-btn active-l1" onclick="appState.setLine('L1')">Linea 1 (Mare)</button>
+        <button id="tab-l1" class="seg-btn active-l1" onclick="appState.setLine('L1')">Linea 1 (Urbana)</button>
         <button id="tab-l2" class="seg-btn" onclick="appState.setLine('L2')">Linea Specchia</button>
     </div>
-    
     <div class="segmented-control" style="background: rgba(0,0,0,0.03);">
-        <button id="dir-out" class="seg-btn active-dir" onclick="appState.setDir('out')">Verso Stazione/Mare</button>
+        <button id="dir-out" class="seg-btn active-dir" onclick="appState.setDir('out')">Verso Stazione</button>
         <button id="dir-in" class="seg-btn" onclick="appState.setDir('in')">Verso Centro</button>
     </div>
 
-    <!-- SELETTORE FERMATE -->
-    <div class="stop-selector" id="stop-list">
-        <!-- Generato dinamicamente via JS -->
-    </div>
+    <div class="stop-selector" id="stop-list"></div>
 
     <div class="dashboard">
         <div class="timer-box" id="timer-box">
@@ -145,7 +134,8 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    // --- DATABASE: Orari Base (Capolinea) + FERMATE CON OFFSET (Minuti dal capolinea) ---
+    // --- DATABASE 100% UFFICIALE (Estratto dai 9 PDF Forniti) ---
+    // Gestisce orari differenziati Feriali (wk) e Festivi (hol) e calcola il "dopo mezzanotte"
     const SCHEDULE_DB = {
         L1: {
             color: '#0A58CA',
@@ -153,22 +143,27 @@
             travelTime: 20,
             out: {
                 label: "Verso Stazione / Mare",
-                departures:["07:15", "08:05", "09:10", "10:10", "11:10", "12:10", "13:10", "14:10", "15:30", "16:40", "18:00", "19:10", "20:10"],
+                departures: {
+                    wk:["04:02", "05:12", "06:20", "06:42", "07:33", "08:23", "08:43", "09:40", "09:42", "10:12", "10:52", "11:12", "11:42", "12:20", "12:42", "13:13", "13:42", "14:13", "14:42", "15:12", "16:12", "16:42", "17:12", "17:42", "18:12", "18:42", "19:20", "19:42", "20:12", "21:12", "22:12", "23:27"],
+                    hol:["06:12", "08:43", "09:42", "10:52", "12:42", "13:42", "16:12", "16:42", "18:27", "20:12", "22:12"]
+                },
                 stops:[
-                    { name: "Piazza Libertà", coords:[40.7307, 17.5778], offsetMin: 0 },
-                    { name: "Viale Pola", coords:[40.7375, 17.5802], offsetMin: 3 },
-                    { name: "Stazione FS", coords:[40.7516, 17.5913], offsetMin: 8 },
+                    { name: "Piazza Italia", coords:[40.7307, 17.5778], offsetMin: 0 },
+                    { name: "Viale Pola", coords:[40.7375, 17.5802], offsetMin: 2 },
+                    { name: "Stazione FS", coords:[40.7516, 17.5913], offsetMin: 13 },
                     { name: "Villanova Mare", coords:[40.7905, 17.5966], offsetMin: 20 }
                 ]
             },
             in: {
-                label: "Verso Centro Storico",
-                departures:["07:45", "08:35", "09:40", "10:40", "11:40", "12:40", "13:40", "14:40", "16:00", "17:10", "18:30", "19:40", "20:40"],
+                label: "Verso Centro Città",
+                departures: {
+                    wk:["04:30", "05:30", "06:45", "07:33", "07:55", "08:40", "09:00", "09:30", "10:00", "10:30", "10:43", "11:35", "12:00", "12:40", "13:00", "13:30", "14:00", "14:30", "15:30", "16:00", "16:30", "17:00", "17:30", "18:00", "18:30", "19:00", "19:33", "20:30", "21:30", "22:45", "24:10"], // 24:10 = 00:10 PDF
+                    hol:["06:30", "09:30", "10:43", "13:00", "14:33", "16:00", "17:33", "19:33", "20:30", "22:45"]
+                },
                 stops: [
-                    { name: "Villanova Mare", coords:[40.7905, 17.5966], offsetMin: 0 },
-                    { name: "Stazione FS", coords: [40.7516, 17.5913], offsetMin: 12 },
-                    { name: "Viale Pola", coords:[40.7375, 17.5802], offsetMin: 17 },
-                    { name: "Piazza Libertà", coords: [40.7307, 17.5778], offsetMin: 20 }
+                    { name: "Stazione FS", coords:[40.7516, 17.5913], offsetMin: 0 },
+                    { name: "Viale Pola", coords:[40.7375, 17.5802], offsetMin: 13 },
+                    { name: "Piazza Italia", coords:[40.7307, 17.5778], offsetMin: 14 }
                 ]
             }
         },
@@ -178,7 +173,10 @@
             travelTime: 15,
             out: {
                 label: "Verso Stazione FS",
-                departures:["06:55", "07:25", "08:15", "09:15", "10:15", "11:15", "12:15", "13:20", "14:20", "16:20", "17:30", "18:50", "19:50"],
+                departures: {
+                    wk:["04:08", "05:18", "06:27", "06:48", "07:39", "08:30", "08:50", "09:00", "09:40", "09:47", "09:48", "10:18", "10:20", "10:58", "11:00", "11:18", "11:40", "11:48", "12:20", "12:27", "12:48", "13:00", "13:20", "13:48", "13:50", "14:20", "14:30", "14:48", "15:00", "15:18", "15:40", "16:18", "16:20", "16:48", "17:00", "17:18", "17:40", "17:48", "18:18", "18:20", "18:48", "19:00", "19:27", "19:48", "20:18", "21:18", "22:18", "23:33"],
+                    hol:["06:18", "08:50", "09:00", "09:40", "09:48", "10:20", "10:58", "11:00", "11:40", "12:20", "12:48", "13:00", "13:40", "13:48", "14:45", "15:40", "16:20", "16:48", "17:00", "17:40", "18:20", "18:33", "19:00", "20:18", "22:18"]
+                },
                 stops:[
                     { name: "Via T. Specchia", coords:[40.7350, 17.5710], offsetMin: 0 },
                     { name: "Via Giovanni XXIII", coords:[40.7380, 17.5760], offsetMin: 4 },
@@ -187,31 +185,58 @@
             },
             in: {
                 label: "Verso Via Specchia",
-                departures:["07:10", "07:55", "08:50", "09:50", "10:50", "11:50", "12:50", "13:55", "15:00", "16:45", "18:10", "19:15", "20:15"],
+                departures: {
+                    wk:["04:30", "05:30", "06:45", "07:33", "07:55", "08:40", "09:00", "09:20", "09:30", "10:00", "10:30", "10:40", "10:43", "11:35", "12:00", "12:40", "13:00", "13:30", "14:00", "14:10", "14:33", "14:45", "15:00", "15:20", "15:30", "16:00", "16:30", "16:40", "17:20", "17:30", "17:33", "18:00", "18:30", "18:40", "19:00", "19:20", "19:33", "20:30", "21:30", "22:45", "24:10"],
+                    hol:["06:30", "09:20", "09:30", "10:00", "10:40", "10:43", "11:20", "12:00", "12:40", "13:00", "13:20", "14:00", "14:33", "15:20", "16:00", "16:40", "17:20", "17:30", "17:33", "18:00", "18:40", "19:20", "19:33", "20:30", "22:45"]
+                },
                 stops:[
-                    { name: "Stazione FS", coords: [40.7516, 17.5913], offsetMin: 0 },
+                    { name: "Stazione FS", coords:[40.7516, 17.5913], offsetMin: 0 },
                     { name: "Via Giovanni XXIII", coords:[40.7380, 17.5760], offsetMin: 11 },
-                    { name: "Via T. Specchia", coords: [40.7350, 17.5710], offsetMin: 15 }
+                    { name: "Via T. Specchia", coords:[40.7350, 17.5710], offsetMin: 15 }
                 ]
             }
         }
     };
 
     const appState = {
-        line: 'L1', dir: 'out', stopIdx: 0, map: null, 
+        line: 'L1', dir: 'out', stopIdx: 0, map: null, isHoliday: false,
         layers: { routes:[], stops:[], bus: null },
+
+        // Setup Iniziale e Controllo Calendario
+        init() {
+            // Controlla se oggi è Domenica
+            this.isHoliday = [0].includes(new Date().getDay());
+            
+            const badge = document.getElementById('day-badge');
+            if (this.isHoliday) {
+                badge.innerText = "Orario Festivo";
+                badge.className = "day-badge festivo";
+            } else {
+                badge.innerText = "Orario Feriale";
+                badge.className = "day-badge";
+            }
+
+            this.initMap();
+            this.updateUI();
+            setInterval(() => this.processData(), 15000); // Ricalcola ogni 15 sec
+        },
 
         setLine(l) { this.line = l; this.stopIdx = 0; this.updateUI(); this.drawMap(); },
         setDir(d) { this.dir = d; this.stopIdx = 0; this.updateUI(); this.drawMap(); },
         setStop(idx) { this.stopIdx = idx; this.renderStopSelector(); this.highlightMapStop(); this.processData(); },
 
-        // Utility: Aggiunge minuti a un orario "HH:MM"
-        addMinutesToTime(timeStr, mins) {
-            let [h, m] = timeStr.split(':').map(Number);
-            let totalMins = h * 60 + m + mins;
-            let newH = Math.floor(totalMins / 60) % 24;
-            let newM = totalMins % 60;
-            return `${String(newH).padStart(2, '0')}:${String(newM).padStart(2, '0')}`;
+        // Parser Avanzato Orari (gestisce i formati oltre mezzanotte es. 24:10)
+        parseTimeStrToMins(timeStr) {
+            let[h, m] = timeStr.split(':').map(Number);
+            return (h * 60) + m;
+        },
+
+        formatMinsToStr(mins) {
+            let h = Math.floor(mins / 60);
+            let m = mins % 60;
+            // Se supera le 24 mostra 00:xx
+            let displayH = h >= 24 ? h - 24 : h;
+            return `${String(displayH).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
         },
 
         updateUI() {
@@ -227,6 +252,7 @@
             document.querySelector('.app-title span').style.color = c;
             document.getElementById('btn-pay').style.background = c;
             document.getElementById('timer-box').style.background = c;
+            document.getElementById('lbl-stop').style.color = c;
             
             this.renderStopSelector();
             this.processData();
@@ -247,9 +273,6 @@
             });
 
             document.getElementById('lbl-stop').innerHTML = `📍 ${stops[this.stopIdx].name}`;
-            document.getElementById('lbl-stop').style.color = SCHEDULE_DB[this.line].color;
-            
-            // Auto scroll per centrare il bottone
             setTimeout(() => {
                 const activeEl = container.querySelector('.stop-chip[class*="active"]');
                 if(activeEl) container.scrollTo({ left: activeEl.offsetLeft - 20, behavior: 'smooth' });
@@ -258,57 +281,56 @@
 
         processData() {
             const now = new Date();
-            const currentMins = now.getHours() * 60 + now.getMinutes();
+            let currentMins = now.getHours() * 60 + now.getMinutes();
+            // Trucco "Top Dev" per orari notturni: Se sono le 00:05, calcolalo come 24:05 per non rompere la timeline
+            if (now.getHours() < 3) currentMins += (24 * 60); 
             
             const currentDirData = SCHEDULE_DB[this.line][this.dir];
-            const baseDepartures = currentDirData.departures;
+            // Prende l'array di partenze giusto in base al giorno!
+            const baseDepartures = this.isHoliday ? currentDirData.departures.hol : currentDirData.departures.wk;
             const stopOffset = currentDirData.stops[this.stopIdx].offsetMin;
             
-            // CALCOLO ORARI LOCALI PER LA FERMATA SELEZIONATA
-            const localSchedule = baseDepartures.map(time => this.addMinutesToTime(time, stopOffset));
+            // 1. Calcola il Palinsesto Locale in minuti reali
+            const localScheduleMins = baseDepartures.map(timeStr => this.parseTimeStrToMins(timeStr) + stopOffset);
+            const baseScheduleMins = baseDepartures.map(timeStr => this.parseTimeStrToMins(timeStr));
             
             let nextIndex = -1;
             let activeBusIndex = -1;
 
-            // Logica orari (basata sull'orario locale della fermata)
-            for(let i=0; i<localSchedule.length; i++) {
-                let [h, m] = localSchedule[i].split(':');
-                let localTimeInMins = parseInt(h)*60 + parseInt(m);
-                
-                if (localTimeInMins >= currentMins) {
+            // 2. Trova il prossimo bus alla FERMATA SELEZIONATA
+            for(let i=0; i<localScheduleMins.length; i++) {
+                if (localScheduleMins[i] >= currentMins) {
                     if (nextIndex === -1) nextIndex = i;
                 }
             }
 
-            // Logica Posizione Fisica (basata SEMPRE sulla partenza dal capolinea)
-            for(let i=0; i<baseDepartures.length; i++) {
-                let[h, m] = baseDepartures[i].split(':');
-                let baseTimeInMins = parseInt(h)*60 + parseInt(m);
-                if (currentMins >= baseTimeInMins && currentMins < (baseTimeInMins + SCHEDULE_DB[this.line].travelTime)) {
-                    activeBusIndex = i; // Bus fisicamente per strada
+            // 3. Trova se c'è un bus FISICAMENTE in strada adesso (calcolato dal capolinea)
+            for(let i=0; i<baseScheduleMins.length; i++) {
+                if (currentMins >= baseScheduleMins[i] && currentMins < (baseScheduleMins[i] + SCHEDULE_DB[this.line].travelTime)) {
+                    activeBusIndex = i; 
                 }
             }
 
-            this.renderTimeline(localSchedule, nextIndex);
+            this.renderTimeline(localScheduleMins, nextIndex);
             
+            // Update Text UI
             if (nextIndex !== -1) {
-                let[h, m] = localSchedule[nextIndex].split(':');
-                document.getElementById('time-val').innerText = (parseInt(h)*60 + parseInt(m)) - currentMins;
-                document.getElementById('next-time').innerText = localSchedule[nextIndex];
+                document.getElementById('time-val').innerText = localScheduleMins[nextIndex] - currentMins;
+                document.getElementById('next-time').innerText = this.formatMinsToStr(localScheduleMins[nextIndex]);
             } else {
                 document.getElementById('time-val').innerText = "--";
                 document.getElementById('next-time').innerText = "Servizio Terminato";
             }
 
-            this.moveBusOnMap(baseDepartures, currentMins, activeBusIndex, nextIndex);
+            this.moveBusOnMap(baseScheduleMins, currentMins, activeBusIndex, nextIndex);
         },
 
-        renderTimeline(localSchedule, nextIndex) {
+        renderTimeline(localScheduleMins, nextIndex) {
             const container = document.getElementById('full-schedule');
             container.innerHTML = '';
-            localSchedule.forEach((time, index) => {
+            localScheduleMins.forEach((mins, index) => {
                 let div = document.createElement('div');
-                div.innerText = time;
+                div.innerText = this.formatMinsToStr(mins);
                 if (index < nextIndex && nextIndex !== -1) div.className = 'time-chip past';
                 else if (index === nextIndex) { div.className = `time-chip next`; div.id = 'chip-next'; }
                 else div.className = 'time-chip';
@@ -320,11 +342,10 @@
             }, 300);
         },
 
-        moveBusOnMap(baseDepartures, currentMins, activeBusIndex, nextIndex) {
+        moveBusOnMap(baseScheduleMins, currentMins, activeBusIndex, nextIndex) {
             let progress = 0; 
             if (activeBusIndex !== -1) {
-                let [h, m] = baseDepartures[activeBusIndex].split(':');
-                progress = (currentMins - (parseInt(h)*60 + parseInt(m))) / SCHEDULE_DB[this.line].travelTime;
+                progress = (currentMins - baseScheduleMins[activeBusIndex]) / SCHEDULE_DB[this.line].travelTime;
             } else if (nextIndex !== -1) {
                 progress = 0; 
             } else {
@@ -372,7 +393,7 @@
         drawMap() {
             this.layers.routes.forEach(l => this.map.removeLayer(l));
             this.layers.stops.forEach(s => this.map.removeLayer(s));
-            this.layers.routes = []; this.layers.stops =[];
+            this.layers.routes =[]; this.layers.stops =[];
 
             const c = SCHEDULE_DB[this.line].color;
             const rawRoute = SCHEDULE_DB[this.line].route;
@@ -386,12 +407,9 @@
 
             this.layers.routes.push(shadow, base, flow);
 
-            // Disegna fermate reali
             stops.forEach((stop, idx) => {
                 let icon = L.divIcon({ className: 'stop-marker', iconSize:[12, 12], iconAnchor:[6,6] });
                 let m = L.marker(stop.coords, { icon: icon }).addTo(this.map);
-                
-                // Cliccare sulla mappa cambia la fermata selezionata!
                 m.on('click', () => { this.setStop(idx); });
                 this.layers.stops.push(m);
             });
@@ -411,9 +429,7 @@
                     else el.className = `leaflet-marker-icon leaflet-zoom-animated leaflet-interactive stop-marker`;
                 }
             });
-            // Focus mappa sulla fermata scelta
             if(this.layers.stops[this.stopIdx]) {
-                const uiHeight = document.getElementById('ui-panel').offsetHeight;
                 this.map.panTo(this.layers.stops[this.stopIdx].getLatLng(), {animate: true});
             }
         }
@@ -421,11 +437,7 @@
 
     function locateUser() { if (appState.map) appState.map.locate({ setView: true, maxZoom: 16 }); }
 
-    window.onload = () => {
-        appState.initMap();
-        appState.updateUI();
-        setInterval(() => appState.processData(), 15000); // Ricalcola ogni 15 sec
-    };
+    window.onload = () => { appState.init(); };
 </script>
 </body>
 </html>
